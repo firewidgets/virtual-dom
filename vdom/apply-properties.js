@@ -3,6 +3,11 @@ var isHook = require("../vnode/is-vhook.js")
 
 module.exports = applyProperties
 
+function isIE () {
+  var myNav = navigator.userAgent.toLowerCase();
+  return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+}
+
 function applyProperties(node, props, previous) {
     for (var propName in props) {
         var propValue = props[propName]
@@ -83,6 +88,21 @@ function patchObject(node, props, previous, propName, propValue) {
     for (var k in propValue) {
         var value = propValue[k]
         node[propName][k] = (value === undefined) ? replacer : value
+    }
+
+    if (isIE () && isIE () <= 10) {
+        // NOTE: In IE <= 10 any properties set in the 'dataset' property
+        //       will not result in a `data-*` attribute on the element so we
+        //       need to add them ourselves.
+        for (var k in propValue) {
+            var name = "data-" + k.replace(/([A-Z])/g, "-$1").toLowerCase();
+            var value = propValue[k]
+            if (value === undefined) {
+                node.removeAttribute(name)
+            } else {
+                node.setAttribute(name, value)
+            }
+        }
     }
 }
 
